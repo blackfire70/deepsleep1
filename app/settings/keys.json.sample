@@ -1,0 +1,6 @@
+
+{
+	"SECRET_KEY": "<Secret key>",
+	"EMAIL_HOST_USER": "<Email address>",
+	"EMAIL_HOST_PASSWORD": "<Email password>"
+}
