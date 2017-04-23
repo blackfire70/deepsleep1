@@ -73,8 +73,6 @@ class UserLoginViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     @list_route(methods=['post'])
     def login(self, request):
-        import pdb
-        pdb.set_trace()
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = authenticate(
