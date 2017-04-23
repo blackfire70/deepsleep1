@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.validators import UniqueValidator
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserCreateSerializer(serializers.ModelSerializer):
 
     password = serializers.CharField(max_length=200, write_only=True, required=True)
     email = serializers.EmailField(
@@ -19,6 +19,14 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ('email', 'password', 'first_name', 'last_name', 'is_active')
+
+
+class UserViewSerializer(UserCreateSerializer):
+    email = serializers.EmailField(
+        read_only=True
+    )
+    first_name = serializers.CharField(read_only=True)
+    last_name = serializers.CharField(read_only=True)
 
 
 class UserLoginSerializer(serializers.ModelSerializer):

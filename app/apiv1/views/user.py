@@ -6,12 +6,16 @@ from django.utils import timezone
 
 from oauthlib.common import generate_token
 from rest_framework.permissions import AllowAny
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.decorators import list_route
 from oauth2_provider.models import AccessToken, Application
-
-from apiv1.serializers import UserSerializer, UserLoginSerializer
+from oauth2_provider.ext.rest_framework import TokenHasScope
+from apiv1.serializers import (
+    UserViewSerializer,
+    UserLoginSerializer,
+    UserCreateSerializer,
+)
 
 
 def create_token(user):
@@ -29,8 +33,25 @@ def create_token(user):
     return access_token
 
 class UserViewSet(viewsets.ModelViewSet):
+    serializer_class = UserViewSerializer
+    queryset = User.objects.all()
+    permission_classes = [permissions.IsAuthenticated, TokenHasScope]
 
-    serializer_class = UserSerializer
+    @list_route(method=['post'])
+    def change_password(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            user.set_password(request.data['password'])
+            user.save()
+            return Response({'message':'password changed.'}, status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
+
+
+class UserCreateViewSet(viewsets.ModelViewSet):
+
+    serializer_class = UserCreateSerializer
     queryset = User.objects.all()
 
     def create(self, request):
