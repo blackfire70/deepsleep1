@@ -1,4 +1,3 @@
-
 """
 Django settings for app project.
 
@@ -84,8 +83,15 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.ext.rest_framework.OAuth2Authentication',
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     )
 }
+OAUTH2_PROVIDER = {
+'SCOPES': {'read': 'Read scope'},
+'ACCESS_TOKEN_EXPIRE_SECONDS': 36000,
+} 
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
