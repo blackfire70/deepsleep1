@@ -1,26 +1,29 @@
-from django.contrib.auth.models import User
-from django.utils import timezone
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
+from django.core.validators import ValidationError
+from django.utils import timezone
+
 from oauthlib.common import generate_token
 from rest_framework.permissions import AllowAny
-from rest_framework.generics import CreateAPIView
 from rest_framework import viewsets, status
-from oauth2_provider.models import AccessToken, Application
-from apiv1.serializers import UserSerializer
 from rest_framework.response import Response
-from django.core.validators import ValidationError
+from rest_framework.decorators import list_route
+from oauth2_provider.models import AccessToken, Application
+
+from apiv1.serializers import UserSerializer, UserLoginSerializer
 
 
 def create_token(user):
-    expire_second = settings.OAUTH2_PRODIVER['ACCESS_TOKEN_EXPIRE_SECONDS']
+    expire_second = settings.OAUTH2_PROVIDER['ACCESS_TOKEN_EXPIRE_SECONDS']
     expires = timezone.now() + timezone.timedelta(seconds=expire_second)
-    scopes = settings.OAUTH2_PRODIVER['SCOPES']
+    scopes = settings.OAUTH2_PROVIDER['SCOPES']
     app = Application.objects.get(name='myapp')
     access_token = AccessToken.objects.create(
         user=user,
-        app=app,
+        application=app,
         expires=expires,
-        scopes=scopes,
+        scope=scopes,
         token=generate_token()
     )
     return access_token
@@ -42,7 +45,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 is_active=False
             )
 
-            user.set_password(serializer.data['password'])
+            user.set_password(request.data['password'])
             try:
                 user.full_clean()
             except ValidationError as e:
@@ -52,8 +55,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 )
             else:
                 user.save()
+                create_token(user)
                 return Response(
-                    self.get_serializer(user),
+                    self.get_serializer(user).data,
                     status=status.HTTP_201_CREATED
                 )
         else:
@@ -66,20 +70,21 @@ class UserViewSet(viewsets.ModelViewSet):
 class UserLoginViewSet(viewsets.ModelViewSet):
 
     serializer_class = UserLoginSerializer
-    queryset = User.objects.filter(is_active=True)
+    queryset = User.objects.all()
     @list_route(methods=['post'])
     def login(self, request):
+        import pdb
+        pdb.set_trace()
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = authenticate(
                 username=serializer.data['email'],
                 password=request.data['password']
             )
-            if user and user.is_active=True:
+            if user and user.is_active==True:
                 login(request, user)
                 token = AccessToken.objects.get(user=user).token
-                data = {'message': 'logged in', 'BearerToken': token }
-                return Response(data, status=status.HTTP_200_OK)
+                return Response({'token': token}, status=status.HTTP_200_OK)
             else:
                 return Response(
                     {'message': 'Invalid email/password'},
