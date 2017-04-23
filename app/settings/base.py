@@ -12,12 +12,13 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 import json
+from django.core.exceptions import ImproperlyConfigured
 # Path config
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS_DIR = os.path.join(BASE_DIR, 'settings')
 
-from django.core.exceptions import ImproperlyConfigured
+
 
 try:
     with open(os.path.join(SETTINGS_DIR, 'keys.json'), 'r') as fh:
@@ -90,7 +91,7 @@ REST_FRAMEWORK = {
 }
 OAUTH2_PROVIDER = {
 'SCOPES': {'read': 'Read scope'},
-'ACCESS_TOKEN_EXPIRE_SECONDS': 36000,
+'ACCESS_TOKEN_EXPIRE_SECONDS': 360000,
 } 
 
 MIDDLEWARE = [
@@ -123,6 +124,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'settings.wsgi.application'
 
+########## EMAIL CONFIGURATION
+# See: https://docs.djangoproject.com/en/dev/topics/email/#smtp-backend
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#email-host-user
+EMAIL_HOST_USER = get_key('EMAIL_HOST_USER')
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#email-host-password
+EMAIL_HOST_PASSWORD = get_key('EMAIL_HOST_PASSWORD')
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#email-host
+EMAIL_HOST = 'smtp.gmail.com'
+
+# See: https://docs.djangoproject.com/en/dev/ref/settings/#email-port
+EMAIL_PORT = 587
 
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases

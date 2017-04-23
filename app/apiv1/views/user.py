@@ -16,6 +16,7 @@ from apiv1.serializers import (
     UserLoginSerializer,
     UserCreateSerializer,
 )
+from core.utils.mail import send_activation_mail
 
 
 def create_token(user):
@@ -76,7 +77,9 @@ class UserCreateViewSet(viewsets.ModelViewSet):
                 )
             else:
                 user.save()
-                create_token(user)
+                token = create_token(user)
+                #TO DO: convert mail sending to a celery task
+                send_activation_mail(user=user, token=token)
                 return Response(
                     self.get_serializer(user).data,
                     status=status.HTTP_201_CREATED
@@ -86,6 +89,19 @@ class UserCreateViewSet(viewsets.ModelViewSet):
                 serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    def activate(self, request, pk=None):
+        user = User.objects.get(id=pk)
+        token = request.GET['token']
+        token = token.replace(' ', '+')
+        algo, salt, p_hash = user.password.split('$', 2)
+        if token == p_hash:
+            user.is_active = True
+            user.save()
+            return Response({'message': 'account activated'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'message': 'invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 class UserLoginViewSet(viewsets.ModelViewSet):
