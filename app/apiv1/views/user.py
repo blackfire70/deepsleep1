@@ -20,6 +20,11 @@ from core.utils.mail import send_activation_mail
 
 
 def create_token(user):
+    '''
+    Creates an AccessToken object for the user and application 'myapp'
+    :param user: User instance
+    :param type: class
+    '''
     expire_second = settings.OAUTH2_PROVIDER['ACCESS_TOKEN_EXPIRE_SECONDS']
     expires = timezone.now() + timezone.timedelta(seconds=expire_second)
     scopes = settings.OAUTH2_PROVIDER['SCOPES']
@@ -40,6 +45,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @list_route(method=['post'])
     def change_password(self, request):
+        '''
+        Resource:
+        api/v1/user/change-password
+        '''
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = request.user
@@ -56,6 +65,12 @@ class UserCreateViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
     def create(self, request):
+         '''
+        Resource:
+        api/v1/user/signup
+        
+        Creates inactive user instance and sends an activation email to the user.
+        '''
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
@@ -91,6 +106,12 @@ class UserCreateViewSet(viewsets.ModelViewSet):
             )
 
     def activate(self, request, pk=None):
+        '''
+        Resource:
+        api/v1/user/activate/<pk>/
+        
+        Sets the user's is_active = True after validation of the token
+        '''
         user = User.objects.get(id=pk)
         token = request.GET['token']
         token = token.replace(' ', '+')
@@ -110,6 +131,12 @@ class UserLoginViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     @list_route(methods=['post'])
     def login(self, request):
+         '''
+        Resource:
+        api/v1/user/activate/login/
+        
+        User login. After authentication, the user is logged in and a bearer token is given.
+        '''
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = authenticate(
