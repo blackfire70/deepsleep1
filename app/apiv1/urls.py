@@ -5,7 +5,7 @@ from apiv1.views import user as user_view
 user_patterns = format_suffix_patterns([
     url(r'^signup/$', user_view.UserCreateViewSet.as_view({'post':'create'}), name='user_signup'),
     url(
-            r'^activate/(?P<pk>\d+)/$',
+        r'^activate/(?P<pk>\d+)/$',
         user_view.UserCreateViewSet.as_view({'get':'activate'}),
         name='user_activate'
     ),
