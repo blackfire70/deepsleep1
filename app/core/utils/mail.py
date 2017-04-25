@@ -18,6 +18,8 @@ def send_activation_mail(user):
         Thanks. 
         The App Team.
     '''
+
+    # The user's hash will be used as a token
     algo, salt, p_hash = user.password.split('$', 2)
     activation_url = (
         'http://localhost:8000/api/v1/user/activate/{}/?token={}'.format(
