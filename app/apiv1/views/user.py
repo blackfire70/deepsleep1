@@ -65,12 +65,13 @@ class UserCreateViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
     def create(self, request):
-         '''
+        '''
         Resource:
         api/v1/user/signup
         
         Creates inactive user instance and sends an activation email to the user.
         '''
+        
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
@@ -94,7 +95,7 @@ class UserCreateViewSet(viewsets.ModelViewSet):
                 user.save()
                 token = create_token(user)
                 #TO DO: convert mail sending to a celery task
-                send_activation_mail(user=user, token=token)
+                send_activation_mail(user=user)
                 return Response(
                     self.get_serializer(user).data,
                     status=status.HTTP_201_CREATED
@@ -131,7 +132,7 @@ class UserLoginViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     @list_route(methods=['post'])
     def login(self, request):
-         '''
+        '''
         Resource:
         api/v1/user/activate/login/
         
