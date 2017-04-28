@@ -1,14 +1,15 @@
+from oauthlib.common import generate_token
+
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
 from django.core.validators import ValidationError
 from django.utils import timezone
 
-from oauthlib.common import generate_token
-from rest_framework.permissions import AllowAny
+
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
-from rest_framework.decorators import list_route
+from rest_framework.decorators import detail_route, list_route
 from oauth2_provider.models import AccessToken, Application
 from oauth2_provider.ext.rest_framework import TokenHasScope
 from apiv1.serializers import (
@@ -38,41 +39,46 @@ def create_token(user):
     )
     return access_token
 
+
 class UserViewSet(viewsets.ModelViewSet):
+    '''
+    User ViewSet
+    Contains all the operations to the model User
+    '''
+
     serializer_class = UserViewSerializer
     queryset = User.objects.all()
     permission_classes = [permissions.IsAuthenticated, TokenHasScope]
 
-    @list_route(method=['post'])
+    @list_route(methods=['post'])
     def change_password(self, request):
         '''
         Resource:
-        api/v1/user/change-password
+        api/v1/users/change_password
         '''
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = request.user
             user.set_password(request.data['password'])
             user.save()
-            return Response({'message':'password changed.'}, status.HTTP_200_OK)
+            return Response(
+                {'message': 'password changed.'},
+                status.HTTP_200_OK
+            )
         else:
             return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
-
-class UserCreateViewSet(viewsets.ModelViewSet):
-
-    serializer_class = UserCreateSerializer
-    queryset = User.objects.all()
-
-    def create(self, request):
+    @list_route(methods=['post'], permission_classes=[permissions.AllowAny])
+    def signup(self, request):
         '''
         Resource:
-        api/v1/user/signup
-        
-        Creates inactive user instance and sends an activation email to the user.
+        api/v1/users/signup
+
+        Creates inactive user instance and
+        sends an activation email to the user.
         '''
-        
-        serializer = self.get_serializer(data=request.data)
+
+        serializer = UserCreateSerializer(data=request.data)
 
         if serializer.is_valid():
             user = User(
@@ -88,13 +94,13 @@ class UserCreateViewSet(viewsets.ModelViewSet):
                 user.full_clean()
             except ValidationError as e:
                 return Response(
-                    {'error':'cause:{}'.format(e)},
+                    {'error': 'cause:{}'.format(e)},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             else:
                 user.save()
-                token = create_token(user)
-                #TO DO: convert mail sending to a celery task
+                create_token(user)
+                # TO DO: convert mail sending to a celery task
                 send_activation_mail(user=user)
                 return Response(
                     self.get_serializer(user).data,
@@ -106,11 +112,11 @@ class UserCreateViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+    @detail_route(methods=['get'], permission_classes=[permissions.AllowAny])
     def activate(self, request, pk=None):
         '''
         Resource:
-        api/v1/user/activate/<pk>/
-        
+        api/v1/users/<pk>activate/
         Sets the user's is_active = True after validation of the token
         '''
         user = User.objects.get(id=pk)
@@ -120,39 +126,39 @@ class UserCreateViewSet(viewsets.ModelViewSet):
         if token == p_hash:
             user.is_active = True
             user.save()
-            return Response({'message': 'account activated'}, status=status.HTTP_200_OK)
+            return Response(
+                {'message': 'account activated'},
+                status=status.HTTP_200_OK
+            )
         else:
-            return Response({'message': 'invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {'message': 'invalid token'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
-
-
-class UserLoginViewSet(viewsets.ModelViewSet):
-
-    serializer_class = UserLoginSerializer
-    queryset = User.objects.all()
-    @list_route(methods=['post'])
+    @list_route(methods=['post'], permission_classes=[permissions.AllowAny])
     def login(self, request):
         '''
         Resource:
-        api/v1/user/activate/login/
-        
-        User login. After authentication, the user is logged in and a bearer token is given.
+        api/v1/users/login/
+        User login. After authentication, the user is logged in and
+        a bearer token is given.
         '''
-        serializer = self.get_serializer(data=request.data)
+        serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
             user = authenticate(
                 username=serializer.data['email'],
                 password=request.data['password']
             )
-            if user and user.is_active==True:
+            if user and user.is_active is True:
                 login(request, user)
                 token = AccessToken.objects.get(user=user).token
                 return Response({'token': token}, status=status.HTTP_200_OK)
-            else:
-                return Response(
-                    {'message': 'Invalid email/password'},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
+
+            return Response(
+                {'message': 'Invalid email/password'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         else:
             return Response(
                 serializer.errors,
