@@ -33,14 +33,20 @@ class UserCreateSerializer(serializers.ModelSerializer):
         fields = ('email', 'password', 'first_name', 'last_name', 'is_active')
 
 
-class UserViewSerializer(UserCreateSerializer):
+class UserViewSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         read_only=True
+    )
+    password = serializers.CharField(
+        max_length=200,
+        write_only=True,
+        required=True
     )
     first_name = serializers.CharField(read_only=True)
     last_name = serializers.CharField(read_only=True)
     is_staff = serializers.BooleanField(read_only=True)
-    last_login = serializers.DateField(read_only=True)
+    last_login = serializers.DateTimeField(read_only=True)
+    is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = get_user_model()
