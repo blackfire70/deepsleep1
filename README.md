@@ -1,14 +1,21 @@
 # deepsleep1
 
 A simple django app with signup, account activation, login, change password, and user list.
+
+Run the server with command:
+```
+python manage.py runserver --settings=settings.dev
+```
+(since there are no prod settings yet.)
+
 API endpoints
 signup
 ```
-/api/v1/users/signup
+/api/v1/users/signup/
 ```
 log in
 ```
-/api/v1/users/login
+/api/v1/users/login/
 ```
 user list
 ```
@@ -16,9 +23,9 @@ user list
 ```
 change password
 ```
-/api/v1/users/change_password
+/api/v1/users/change_password/
 ```
 Account activation
 ```
-/api/v1/users/<pk>/activate
+/api/v1/users/<pk>/activate/
 ```
