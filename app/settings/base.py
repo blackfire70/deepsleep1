@@ -140,6 +140,9 @@ EMAIL_HOST = 'smtp.gmail.com'
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#email-port
 EMAIL_PORT = 587
 
+EMAIL_USE_TLS = True
+
+DEFAULT_FROM_EMAIL  = get_key('EMAIL_HOST_USER')
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
