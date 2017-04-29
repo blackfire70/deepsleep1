@@ -2,11 +2,17 @@
 
 A simple django app with signup, account activation, login, change password, and user list.
 
+Create a file `keys.json` in `app/settings` based on `keys.json.sample`. Replace all the fields with proper values.
+
+run `migrate` to migrate third-party models.
+
 Run the server with command:
 ```
 python manage.py runserver --settings=settings.dev
 ```
 (since there are no prod settings yet.)
+
+Create an Application instance name `myapp` under oauth2 provider app
 
 API endpoints
 signup
