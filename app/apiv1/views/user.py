@@ -51,7 +51,7 @@ class UserViewSet(ListModelMixin, viewsets.GenericViewSet):
     authenication_classes = [OAuth2Authentication]
     permission_classes = [permissions.IsAuthenticated]
 
-    @list_route(methods=['post'])
+    @list_route(methods=['patch'])
     def change_password(self, request):
         '''
         Resource:
