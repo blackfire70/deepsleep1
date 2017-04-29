@@ -11,7 +11,7 @@ def send_activation_mail(user):
     '''
 
 
-    from_email = get_key('EMAIL_HOST_USER')
+    from_email = 'Account Activation <{}>'.format(get_key('EMAIL_HOST_USER'))
     body = '''
         Hi, thank you for signing up on our app.
         click {} activate your account

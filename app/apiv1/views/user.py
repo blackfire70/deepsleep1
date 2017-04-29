@@ -2,16 +2,16 @@ from oauthlib.common import generate_token
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate
 from django.core.validators import ValidationError
 from django.utils import timezone
 
-
 from rest_framework import viewsets, status, permissions
-from rest_framework.response import Response
 from rest_framework.decorators import detail_route, list_route
+from rest_framework.mixins import ListModelMixin
+from rest_framework.response import Response
 from oauth2_provider.models import AccessToken, Application
-from oauth2_provider.ext.rest_framework import TokenHasScope
+from oauth2_provider.ext.rest_framework import OAuth2Authentication
 from apiv1.serializers import (
     UserViewSerializer,
     UserLoginSerializer,
@@ -40,7 +40,7 @@ def create_token(user):
     return access_token
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(ListModelMixin, viewsets.GenericViewSet):
     '''
     User ViewSet
     Contains all the operations to the model User
@@ -48,7 +48,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
     serializer_class = UserViewSerializer
     queryset = User.objects.all()
-    permission_classes = [permissions.IsAuthenticated, TokenHasScope]
+    authenication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated]
 
     @list_route(methods=['post'])
     def change_password(self, request):
@@ -103,7 +104,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 # TO DO: convert mail sending to a celery task
                 send_activation_mail(user=user)
                 return Response(
-                    self.get_serializer(user).data,
+                    serializer.data,
                     status=status.HTTP_201_CREATED
                 )
         else:
@@ -150,13 +151,11 @@ class UserViewSet(viewsets.ModelViewSet):
                 username=serializer.data['email'],
                 password=request.data['password']
             )
-            if user and user.is_active is True:
-                login(request, user)
+            if user:
                 token = AccessToken.objects.get(user=user).token
                 return Response({'token': token}, status=status.HTTP_200_OK)
-
             return Response(
-                {'message': 'Invalid email/password'},
+                {'message': 'Invalid email/password or inactive account'},
                 status=status.HTTP_401_UNAUTHORIZED
             )
         else:
