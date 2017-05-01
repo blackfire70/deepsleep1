@@ -52,6 +52,13 @@ class UserViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.AllowAny]
 
     def list(self, request):
+        '''
+        Resource:
+        api/v1/users/
+
+        Only authenticated users can see email field as well as last name field.
+
+        '''
         if request.auth:
             serializer = self.get_serializer(self.queryset, many=True)
         else:
