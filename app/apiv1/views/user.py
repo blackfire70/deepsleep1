@@ -8,12 +8,12 @@ from django.utils import timezone
 
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import detail_route, list_route
-from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
 from oauth2_provider.models import AccessToken, Application
 from oauth2_provider.ext.rest_framework import OAuth2Authentication
 from apiv1.serializers import (
     UserViewSerializer,
+    UserIncompleteSerializer,
     UserLoginSerializer,
     UserCreateSerializer,
 )
@@ -40,7 +40,7 @@ def create_token(user):
     return access_token
 
 
-class UserViewSet(ListModelMixin, viewsets.GenericViewSet):
+class UserViewSet(viewsets.GenericViewSet):
     '''
     User ViewSet
     Contains all the operations to the model User
@@ -49,13 +49,24 @@ class UserViewSet(ListModelMixin, viewsets.GenericViewSet):
     serializer_class = UserViewSerializer
     queryset = User.objects.all()
     authenication_classes = [OAuth2Authentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
-    @list_route(methods=['patch'])
+    def list(self, request):
+        if request.auth:
+            serializer = self.get_serializer(self.queryset, many=True)
+        else:
+            serializer = UserIncompleteSerializer(self.queryset, many=True)
+
+        return Response(serializer.data)
+
+    @list_route(
+        methods=['patch'],
+        permission_classes=[permissions.IsAuthenticated]
+    )
     def change_password(self, request):
         '''
         Resource:
-        api/v1/users/change_password
+        api/v1/users/change_password/
         '''
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
@@ -69,11 +80,11 @@ class UserViewSet(ListModelMixin, viewsets.GenericViewSet):
         else:
             return Response(serializer.errors, status.HTTP_400_BAD_REQUEST)
 
-    @list_route(methods=['post'], permission_classes=[permissions.AllowAny])
+    @list_route(methods=['post'])
     def signup(self, request):
         '''
         Resource:
-        api/v1/users/signup
+        api/v1/users/signup/
 
         Creates inactive user instance and
         sends an activation email to the user.
@@ -113,11 +124,11 @@ class UserViewSet(ListModelMixin, viewsets.GenericViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-    @detail_route(methods=['get'], permission_classes=[permissions.AllowAny])
+    @detail_route(methods=['get'])
     def activate(self, request, pk=None):
         '''
         Resource:
-        api/v1/users/<pk>activate/
+        api/v1/users/<pk>/activate/
         Sets the user's is_active = True after validation of the token
         '''
         user = User.objects.get(id=pk)
@@ -137,7 +148,7 @@ class UserViewSet(ListModelMixin, viewsets.GenericViewSet):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-    @list_route(methods=['post'], permission_classes=[permissions.AllowAny])
+    @list_route(methods=['post'])
     def login(self, request):
         '''
         Resource:
