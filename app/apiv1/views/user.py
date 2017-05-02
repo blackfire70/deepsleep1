@@ -1,15 +1,10 @@
-from oauthlib.common import generate_token
-
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.core.validators import ValidationError
-from django.utils import timezone
 
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import detail_route, list_route
 from rest_framework.response import Response
-from oauth2_provider.models import AccessToken, Application
 from oauth2_provider.ext.rest_framework import OAuth2Authentication
 from apiv1.serializers import (
     UserViewSerializer,
@@ -18,26 +13,8 @@ from apiv1.serializers import (
     UserCreateSerializer,
 )
 from core.utils.mail import send_activation_mail
-
-
-def create_token(user):
-    '''
-    Creates an AccessToken object for the user and application 'myapp'
-    :param user: User instance
-    :param type: class
-    '''
-    expire_second = settings.OAUTH2_PROVIDER['ACCESS_TOKEN_EXPIRE_SECONDS']
-    expires = timezone.now() + timezone.timedelta(seconds=expire_second)
-    scopes = settings.OAUTH2_PROVIDER['SCOPES']
-    app = Application.objects.get(name='myapp')
-    access_token = AccessToken.objects.create(
-        user=user,
-        application=app,
-        expires=expires,
-        scope=scopes,
-        token=generate_token()
-    )
-    return access_token
+from core.utils.oauth import create_application, create_token
+from oauth2_provider.models import AccessToken
 
 
 class UserViewSet(viewsets.GenericViewSet):
@@ -56,7 +33,8 @@ class UserViewSet(viewsets.GenericViewSet):
         Resource:
         api/v1/users/
 
-        Only authenticated users can see email field as well as last name field.
+        Only authenticated users can see email field
+        as well as last name field.
 
         '''
         if request.auth:
@@ -118,7 +96,8 @@ class UserViewSet(viewsets.GenericViewSet):
                 )
             else:
                 user.save()
-                create_token(user)
+                app = create_application(user)
+                create_token(user, app)
                 # TO DO: convert mail sending to a celery task
                 send_activation_mail(user=user)
                 return Response(
