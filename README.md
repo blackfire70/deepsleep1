@@ -12,26 +12,26 @@ python manage.py runserver --settings=settings.dev
 ```
 (since there are no prod settings yet.)
 
-Create an Application instance name `myapp` under oauth2 provider app
 
-API endpoints
-signup
+
+## API endpoints
+### signup
 ```
 /api/v1/users/signup/
 ```
-log in
+### log in
 ```
 /api/v1/users/login/
 ```
-user list
+### user list
 ```
 /api/v1/users/
 ```
-change password
+### change password
 ```
 /api/v1/users/change_password/
 ```
-Account activation
+### Account activation
 ```
 /api/v1/users/<pk>/activate/
 ```
